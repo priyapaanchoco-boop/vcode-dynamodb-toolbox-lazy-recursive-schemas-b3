@@ -2,6 +2,7 @@ import type { MapSchema } from '~/schema/index.js'
 import type { ComputeObject } from '~/types/computeObject.js'
 import type { OmitKeys } from '~/types/omitKeys.js'
 
+import type { SchemaReferences } from '../../utils/schemaReferences.js'
 import type { FormattedValueJSONSchema } from './schema.js'
 import { getFormattedValueJSONSchema } from './schema.js'
 import type { RequiredProperties } from './shared.js'
@@ -22,7 +23,8 @@ export type FormattedMapJSONSchema<
 >
 
 export const getFormattedMapJSONSchema = <SCHEMA extends MapSchema>(
-  schema: SCHEMA
+  schema: SCHEMA,
+  references?: SchemaReferences<Record<string, unknown>>
 ): FormattedMapJSONSchema<SCHEMA> => {
   const displayedAttrEntries = Object.entries(schema.attributes).filter(
     ([, attr]) => !attr.props.hidden
@@ -37,7 +39,7 @@ export const getFormattedMapJSONSchema = <SCHEMA extends MapSchema>(
     properties: Object.fromEntries(
       displayedAttrEntries.map(([attributeName, attribute]) => [
         attributeName,
-        getFormattedValueJSONSchema(attribute)
+        getFormattedValueJSONSchema(attribute, references)
       ])
     ),
     ...(requiredProperties.length > 0 ? { required: requiredProperties } : {})

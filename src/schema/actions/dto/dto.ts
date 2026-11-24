@@ -12,22 +12,21 @@ export class SchemaDTO<SCHEMA extends ItemSchema = ItemSchema>
 
   type: ItemSchemaDTO['type']
   attributes: ItemSchemaDTO['attributes']
+  $schemaDefs?: ItemSchemaDTO['$schemaDefs']
 
   constructor(schema: SCHEMA) {
     super(schema)
     this.type = 'item'
-    this.attributes = Object.fromEntries(
-      Object.entries(this.schema.attributes).map(([attributeName, attribute]) => [
-        attributeName,
-        getSchemaDTO(attribute)
-      ])
-    ) as ItemSchemaDTO['attributes']
+    const dto = getSchemaDTO(schema) as ItemSchemaDTO
+    this.attributes = dto.attributes
+    this.$schemaDefs = dto.$schemaDefs
   }
 
   toJSON(): ItemSchemaDTO {
     return {
       type: this.type,
-      attributes: this.attributes
+      attributes: this.attributes,
+      ...(this.$schemaDefs === undefined ? {} : { $schemaDefs: this.$schemaDefs })
     }
   }
 }

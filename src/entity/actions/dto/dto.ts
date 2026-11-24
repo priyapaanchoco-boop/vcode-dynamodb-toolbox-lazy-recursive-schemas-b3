@@ -39,7 +39,10 @@ export class EntityDTO<ENTITY extends Entity = Entity>
 
     const { partitionKey, sortKey } = this.entity.table
     const partitionKeyAttr = Object.entries(constructorShemaDTO.attributes).find(
-      ([attrName, attr]) => (attr.savedAs ?? attrName) === partitionKey.name
+      ([attrName, attr]) => {
+        const definition = '$ref' in attr ? constructorShemaDTO.$schemaDefs?.[attr.$ref] : attr
+        return (definition?.savedAs ?? attrName) === partitionKey.name
+      }
     )
     if (partitionKeyAttr === undefined) {
       constructorShemaDTO.attributes[partitionKey.name] = {
@@ -52,7 +55,10 @@ export class EntityDTO<ENTITY extends Entity = Entity>
 
     if (sortKey !== undefined) {
       const sortKeyAttr = Object.entries(constructorShemaDTO.attributes).find(
-        ([attrName, attr]) => (attr.savedAs ?? attrName) === sortKey.name
+        ([attrName, attr]) => {
+          const definition = '$ref' in attr ? constructorShemaDTO.$schemaDefs?.[attr.$ref] : attr
+          return (definition?.savedAs ?? attrName) === sortKey.name
+        }
       )
 
       if (sortKeyAttr === undefined) {

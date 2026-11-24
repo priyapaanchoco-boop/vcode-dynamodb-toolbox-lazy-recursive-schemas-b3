@@ -34,6 +34,7 @@ interface SchemaLinksDTO {
 }
 
 interface SchemaPropsDTO extends SchemaDefaultsDTO, SchemaLinksDTO {
+  $schemaDefs?: Record<string, FullSchemaDTO>
   required?: SchemaRequiredProp
   hidden?: boolean
   key?: boolean
@@ -103,7 +104,7 @@ export type PrimitiveSchemaDTO =
 
 export interface SetSchemaDTO extends SchemaPropsDTO {
   type: 'set'
-  elements: (NumberSchemaDTO | StringSchemaDTO | BinarySchemaDTO) & {
+  elements: (NumberSchemaDTO | StringSchemaDTO | BinarySchemaDTO | SchemaReferenceDTO) & {
     required?: AtLeastOnce
     hidden?: false
     savedAs?: undefined
@@ -138,7 +139,7 @@ export interface MapSchemaDTO extends SchemaPropsDTO {
 
 export interface RecordSchemaDTO extends SchemaPropsDTO {
   type: 'record'
-  keys: StringSchemaDTO & {
+  keys: (StringSchemaDTO | SchemaReferenceDTO) & {
     required?: AtLeastOnce
     hidden?: false
     key?: false
@@ -184,6 +185,7 @@ export interface ItemSchemaDTO extends SchemaPropsDTO {
   type: 'item'
   attributes: {
     [name: string]:
+      | SchemaReferenceDTO
       | AnySchemaDTO
       | NullSchemaDTO
       | BooleanSchemaDTO
@@ -198,7 +200,7 @@ export interface ItemSchemaDTO extends SchemaPropsDTO {
   }
 }
 
-export type ISchemaDTO =
+export type FullSchemaDTO =
   | AnySchemaDTO
   | NullSchemaDTO
   | BooleanSchemaDTO
@@ -211,3 +213,13 @@ export type ISchemaDTO =
   | RecordSchemaDTO
   | AnyOfSchemaDTO
   | ItemSchemaDTO
+
+/** References carry no schema discriminator or property overrides. */
+export interface SchemaReferenceDTO
+  extends Partial<Record<Exclude<keyof SchemaPropsDTO, '$schemaDefs'>, never>> {
+  $ref: string
+  type?: never
+  $schemaDefs?: Record<string, FullSchemaDTO>
+}
+
+export type ISchemaDTO = FullSchemaDTO | SchemaReferenceDTO

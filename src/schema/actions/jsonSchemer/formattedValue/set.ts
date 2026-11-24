@@ -1,6 +1,7 @@
 import type { SetSchema } from '~/schema/index.js'
 import type { ComputeObject } from '~/types/computeObject.js'
 
+import type { SchemaReferences } from '../../utils/schemaReferences.js'
 import type { FormattedValueJSONSchema } from './schema.js'
 import { getFormattedValueJSONSchema } from './schema.js'
 
@@ -11,9 +12,10 @@ export type FormattedSetJSONSchema<SCHEMA extends SetSchema> = ComputeObject<{
 }>
 
 export const getFormattedSetJSONSchema = <SCHEMA extends SetSchema>(
-  schema: SCHEMA
+  schema: SCHEMA,
+  references?: SchemaReferences<Record<string, unknown>>
 ): FormattedSetJSONSchema<SCHEMA> => ({
   type: 'array',
-  items: getFormattedValueJSONSchema<SCHEMA['elements']>(schema.elements),
+  items: getFormattedValueJSONSchema<SCHEMA['elements']>(schema.elements, references),
   uniqueItems: true
 })
