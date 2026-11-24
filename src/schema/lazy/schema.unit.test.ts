@@ -141,6 +141,36 @@ describe('lazy schemas', () => {
       value: 'hello'
     })
   })
+
+  test('resolves a lazy alternative in a mixed discriminated union exactly once', () => {
+    const target = map({
+      kind: string().const('text').savedAs('_kind'),
+      value: string().transform(prefix('VALUE'))
+    })
+    const thunk = vi.fn(() => target)
+    const schema = anyOf(
+      lazy(thunk),
+      map({ kind: string().const('number').savedAs('_kind'), value: number() })
+    ).discriminate('kind')
+    expect(thunk).not.toHaveBeenCalled()
+    schema.check()
+    schema.check()
+    expect(schema.match('text')).toBe(target)
+    expect(new Parser(schema).parse({ kind: 'text', value: 'hello' })).toEqual({
+      _kind: 'text',
+      value: 'VALUE#hello'
+    })
+    expect(new Formatter(schema).format({ _kind: 'text', value: 'VALUE#hello' })).toEqual({
+      kind: 'text',
+      value: 'hello'
+    })
+    expect(new Parser(schema).parse({ kind: 'number', value: 42 })).toEqual({
+      _kind: 'number',
+      value: 42
+    })
+    expect(() => new Parser(schema).parse({ kind: 'text', value: 42 })).toThrow()
+    expect(thunk).toHaveBeenCalledTimes(1)
+  })
   test('builds deferred Zod parsers and formatters for recursive trees', () => {
     const tree: MapSchema = map({ value: number<{}>(), children: list(lazy(() => tree)) })
     const value = { value: 1, children: [{ value: 2, children: [] }] }
