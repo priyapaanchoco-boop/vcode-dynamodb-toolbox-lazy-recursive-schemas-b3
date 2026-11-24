@@ -5,6 +5,7 @@ import type { ArrayPath } from '~/schema/actions/utils/types.js'
 import { AnySchema } from '~/schema/any/schema.js'
 import type { Schema } from '~/schema/index.js'
 import { SchemaAction } from '~/schema/index.js'
+import { resolveLazySchema } from '~/schema/lazy/schema.js'
 import { isInteger } from '~/utils/validation/isInteger.js'
 
 import { SubSchema } from './subSchema.js'
@@ -19,6 +20,7 @@ export class Finder<SCHEMA extends Schema = Schema> extends SchemaAction<SCHEMA>
 }
 
 export const findSubSchemas = (schema: Schema, path: ArrayPath): SubSchema[] => {
+  schema = resolveLazySchema(schema)
   const [pathHead, ...pathTail] = path
 
   if (pathHead === undefined) {

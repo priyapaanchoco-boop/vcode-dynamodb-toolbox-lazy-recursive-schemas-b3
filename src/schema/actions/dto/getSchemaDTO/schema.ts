@@ -15,6 +15,8 @@ export const getSchemaDTO = (schema: Schema): ISchemaDTO => {
    * @debt feature "handle defaults, links & validators"
    */
   switch (schema.type) {
+    case 'lazy':
+      throw new Error('Lazy schema serialization is not supported yet.')
     case 'any':
       return getAnySchemaDTO(schema)
     case 'null':

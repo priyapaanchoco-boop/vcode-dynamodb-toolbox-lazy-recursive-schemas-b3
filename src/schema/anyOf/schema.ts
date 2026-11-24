@@ -1,6 +1,7 @@
 import { DynamoDBToolboxError } from '~/errors/index.js'
 import { isArray } from '~/utils/validation/isArray.js'
 
+import { resolveLazySchema } from '../lazy/schema.js'
 import type { Schema } from '../types/index.js'
 import { checkSchemaProps } from '../utils/checkSchemaProps.js'
 import { hasDefinedDefault } from '../utils/hasDefinedDefault.js'
@@ -150,13 +151,15 @@ export class AnyOfSchema<
 }
 
 const getDiscriminators = (schema: Schema): Record<string, string> | undefined => {
+  schema = resolveLazySchema(schema)
   switch (schema.type) {
     case 'anyOf':
       return schema[$discriminators]
     case 'map': {
       const discriminators: Record<string, string> = {}
 
-      for (const [attrName, attr] of Object.entries(schema.attributes)) {
+      for (const [attrName, attribute] of Object.entries(schema.attributes)) {
+        const attr = resolveLazySchema(attribute)
         if (
           attr.type === 'string' &&
           attr.props.enum !== undefined &&
@@ -202,6 +205,7 @@ const intersectDiscriminators = (
 }
 
 const getDiscriminations = (schema: Schema, discriminator: string): Record<string, Schema> => {
+  schema = resolveLazySchema(schema)
   switch (schema.type) {
     case 'anyOf': {
       let discriminations: Record<string, Schema> = {}
@@ -218,7 +222,8 @@ const getDiscriminations = (schema: Schema, discriminator: string): Record<strin
     case 'map': {
       const discriminations: Record<string, Schema> = {}
 
-      const discriminatorAttr = schema.attributes[discriminator]
+      const attribute = schema.attributes[discriminator]
+      const discriminatorAttr = attribute === undefined ? undefined : resolveLazySchema(attribute)
 
       if (discriminatorAttr?.type === 'string') {
         for (const enumValue of discriminatorAttr.props.enum ?? []) {

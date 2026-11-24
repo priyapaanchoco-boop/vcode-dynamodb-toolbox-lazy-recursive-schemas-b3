@@ -1,11 +1,13 @@
 import { DynamoDBToolboxError } from '~/errors/index.js'
 import { formatArrayPath } from '~/schema/actions/utils/formatArrayPath.js'
 import type { InputValue, ItemSchema, Schema, WriteMode } from '~/schema/index.js'
+import { resolveLazySchema } from '~/schema/lazy/schema.js'
 import { cloneDeep } from '~/utils/cloneDeep.js'
 import { isFunction } from '~/utils/validation/isFunction.js'
 
 import { anySchemaParser } from './any.js'
 import { anyOfSchemaParser } from './anyOf.js'
+import { itemParser } from './item.js'
 import { listSchemaParser } from './list.js'
 import { mapSchemaParser } from './map.js'
 import type { InferWriteValueOptions, ParseAttrValueOptions } from './options.js'
@@ -25,6 +27,13 @@ export function* schemaParser<OPTIONS extends ParseAttrValueOptions = {}>(
   // TODO: Define & use DefaultedValue here
   InputValue<ItemSchema, InferWriteValueOptions<OPTIONS, true>> | undefined
 > {
+  if (schema.type === 'lazy') {
+    const target = resolveLazySchema(schema)
+    return yield* target.type === 'item'
+      ? itemParser(target, inputValue, options)
+      : schemaParser(target, inputValue, options)
+  }
+
   const {
     mode = 'put',
     fill = true,

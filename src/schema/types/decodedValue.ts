@@ -22,6 +22,8 @@ import type {
 } from '~/schema/index.js'
 import type { Extends, If, Not, Optional, Overwrite } from '~/types/index.js'
 
+import type { LazySchema } from '../lazy/index.js'
+import type { ResolveLazySchema } from '../lazy/resolve.js'
 import type { ReadValueOptions } from './options.js'
 import type { ChildPaths, MatchKeys } from './pathUtils.js'
 import type { Paths } from './paths.js'
@@ -84,6 +86,14 @@ type SchemaDecodedValue<
 > = Schema extends SCHEMA
   ? unknown
   :
+      | (SCHEMA extends LazySchema
+          ? Schema extends ReturnType<SCHEMA['resolve']>
+            ? unknown
+            : DecodedValue<
+                ResolveLazySchema<SCHEMA>,
+                OPTIONS & ReadValueOptions<ResolveLazySchema<SCHEMA>>
+              >
+          : never)
       | (SCHEMA extends AnySchema ? AnySchemaDecodedValue<SCHEMA> : never)
       | (SCHEMA extends NullSchema
           ? If<MustBeDefined<SCHEMA>, never, undefined> | ResolvedNullSchema

@@ -14,7 +14,15 @@ import type {
   StringSchema
 } from '~/schema/index.js'
 
+import type { LazySchema } from '../lazy/index.js'
+
 export type ResetLinks<SCHEMA extends Schema> =
+  | (SCHEMA extends LazySchema
+      ? LazySchema<
+          ReturnType<SCHEMA['resolve']>,
+          Omit<SCHEMA['props'], 'keyLink' | 'putLink' | 'updateLink'>
+        >
+      : never)
   | (SCHEMA extends AnySchema
       ? AnySchema<{
           [KEY in Exclude<

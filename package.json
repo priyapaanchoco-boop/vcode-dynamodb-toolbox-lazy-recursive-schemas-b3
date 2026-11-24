@@ -100,6 +100,16 @@
         "default": "./dist/cjs/schema/index.js"
       }
     },
+    "./schema/lazy": {
+      "import": {
+        "types": "./dist/esm/schema/lazy/index.d.ts",
+        "default": "./dist/esm/schema/lazy/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/schema/lazy/index.d.ts",
+        "default": "./dist/cjs/schema/lazy/index.js"
+      }
+    },
     "./schema/any": {
       "import": {
         "types": "./dist/esm/schema/any/index.d.ts",

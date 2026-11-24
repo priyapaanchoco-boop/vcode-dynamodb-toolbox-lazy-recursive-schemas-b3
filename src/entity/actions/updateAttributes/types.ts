@@ -40,6 +40,8 @@ import type {
   SetSchema
 } from '~/schema/index.js'
 import type { Paths, ValidValue } from '~/schema/index.js'
+import type { LazySchema } from '~/schema/lazy/index.js'
+import type { ResolveLazySchema } from '~/schema/lazy/resolve.js'
 import type { Extends, If, Not, Optional } from '~/types/index.js'
 
 export type UpdateAttributesInputExtension =
@@ -150,6 +152,11 @@ export type UpdateAttributeInput<
             fallback?: ValidValue<SCHEMA, { defined: true }> | Reference<SCHEMA, AVAILABLE_PATHS>
           ]
         >
+      | (SCHEMA extends LazySchema
+          ? Schema extends ReturnType<SCHEMA['resolve']>
+            ? unknown
+            : UpdateAttributeInput<ResolveLazySchema<SCHEMA>, FILLED, AVAILABLE_PATHS>
+          : never)
       | (SCHEMA extends AnySchema ? ResolveAnySchema<SCHEMA> | unknown : never)
       | (SCHEMA extends PrimitiveSchema ? ResolvePrimitiveSchema<SCHEMA> : never)
       | (SCHEMA extends NumberSchema

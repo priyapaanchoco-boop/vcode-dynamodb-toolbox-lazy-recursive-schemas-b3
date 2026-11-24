@@ -1,24 +1,39 @@
+import type { LazySchema } from '../lazy/index.js'
+import type { ResolveLazySchema } from '../lazy/resolve.js'
 import type { MapSchema } from '../map/schema.js'
 import type { StringSchema } from '../string/schema.js'
 import type { Always, AtLeastOnce, Schema, SchemaProps } from '../types/index.js'
 import type { AnyOfSchema } from './schema.js'
 
+type DiscriminatorAttribute<ATTRIBUTE extends Schema> = ATTRIBUTE extends LazySchema
+  ? ResolveLazySchema<ATTRIBUTE>
+  : ATTRIBUTE
+
 type ElementDiscriminator<ELEMENT extends Schema> = Schema extends ELEMENT
   ? string
   :
+      | (ELEMENT extends LazySchema
+          ? Schema extends ReturnType<ELEMENT['resolve']>
+            ? string
+            : ElementDiscriminator<ResolveLazySchema<ELEMENT>>
+          : never)
       | (ELEMENT extends AnyOfSchema ? Discriminator<ELEMENT['elements']> : never)
       | (ELEMENT extends MapSchema
           ? {
-              [KEY in keyof ELEMENT['attributes']]: ELEMENT['attributes'][KEY] extends StringSchema
-                ? ELEMENT['attributes'][KEY]['props'] extends {
+              [KEY in keyof ELEMENT['attributes']]: DiscriminatorAttribute<
+                ELEMENT['attributes'][KEY]
+              > extends StringSchema
+                ? DiscriminatorAttribute<ELEMENT['attributes'][KEY]>['props'] extends {
                     enum: string[]
                     required?: AtLeastOnce | Always
                     transform?: undefined
                   }
                   ? [
                       KEY,
-                      ELEMENT['attributes'][KEY]['props'] extends { savedAs: string }
-                        ? ELEMENT['attributes'][KEY]['props']['savedAs']
+                      DiscriminatorAttribute<ELEMENT['attributes'][KEY]>['props'] extends {
+                        savedAs: string
+                      }
+                        ? DiscriminatorAttribute<ELEMENT['attributes'][KEY]>['props']['savedAs']
                         : KEY
                     ]
                   : never

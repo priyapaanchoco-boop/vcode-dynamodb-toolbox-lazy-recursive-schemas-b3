@@ -43,6 +43,8 @@ export const getFormattedValueJSONSchema = <SCHEMA extends Schema>(
   type RESPONSE = FormattedValueJSONSchema<SCHEMA>
 
   switch (schema.type) {
+    case 'lazy':
+      throw new Error('Lazy schema serialization is not supported yet.')
     case 'any':
       return {} as RESPONSE
     case 'null':

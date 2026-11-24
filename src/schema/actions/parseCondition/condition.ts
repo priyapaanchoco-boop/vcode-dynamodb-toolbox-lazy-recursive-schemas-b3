@@ -26,6 +26,8 @@ import type {
   StringSchema,
   StringToEscape
 } from '~/schema/index.js'
+import type { LazySchema } from '~/schema/lazy/index.js'
+import type { ResolveLazySchema } from '~/schema/lazy/resolve.js'
 import type { Extends, If } from '~/types/index.js'
 
 export type AnySchemaCondition<
@@ -42,8 +44,22 @@ export type AttrCondition<
   ATTR_PATH extends string,
   SCHEMA extends Schema,
   ALL_PATHS extends string,
-  CUSTOM_VALUE = never
+  CUSTOM_VALUE = never,
+  DEPTH extends unknown[] = []
 > =
+  | (SCHEMA extends LazySchema
+      ? LazySchema extends SCHEMA
+        ? never
+        : DEPTH['length'] extends 8
+          ? AnySchemaCondition<AnySchema, ATTR_PATH, ALL_PATHS>
+          : AttrCondition<
+              ATTR_PATH,
+              ResolveLazySchema<SCHEMA>,
+              ALL_PATHS,
+              CUSTOM_VALUE,
+              [...DEPTH, unknown]
+            >
+      : never)
   | (SCHEMA extends AnySchema ? AnySchemaCondition<SCHEMA, ATTR_PATH, ALL_PATHS> : never)
   | (SCHEMA extends NullSchema ? NullSchemaCondition<ATTR_PATH> : never)
   | (SCHEMA extends BooleanSchema
@@ -63,12 +79,14 @@ export type AttrCondition<
   // Size ok
   | (SCHEMA extends SetSchema ? SetSchemaCondition<ATTR_PATH, SCHEMA, ALL_PATHS> : never)
   // Size ok
-  | (SCHEMA extends ListSchema ? ListSchemaCondition<ATTR_PATH, SCHEMA, ALL_PATHS> : never)
+  | (SCHEMA extends ListSchema ? ListSchemaCondition<ATTR_PATH, SCHEMA, ALL_PATHS, DEPTH> : never)
   // Size ok
-  | (SCHEMA extends MapSchema ? MapSchemaCondition<ATTR_PATH, SCHEMA, ALL_PATHS> : never)
+  | (SCHEMA extends MapSchema ? MapSchemaCondition<ATTR_PATH, SCHEMA, ALL_PATHS, DEPTH> : never)
   // Size ok
-  | (SCHEMA extends RecordSchema ? RecordSchemaCondition<ATTR_PATH, SCHEMA, ALL_PATHS> : never)
-  | (SCHEMA extends AnyOfSchema ? AnyOfSchemaCondition<ATTR_PATH, SCHEMA, ALL_PATHS> : never)
+  | (SCHEMA extends RecordSchema
+      ? RecordSchemaCondition<ATTR_PATH, SCHEMA, ALL_PATHS, DEPTH>
+      : never)
+  | (SCHEMA extends AnyOfSchema ? AnyOfSchemaCondition<ATTR_PATH, SCHEMA, ALL_PATHS, DEPTH> : never)
 
 export type ExistsCondition<ATTR_PATH extends string> = {
   attr: ATTR_PATH
@@ -338,7 +356,8 @@ export type SetSchemaCondition<
 export type ListSchemaCondition<
   ATTR_PATH extends string,
   SCHEMA extends ListSchema,
-  ALL_PATHS extends string
+  ALL_PATHS extends string,
+  DEPTH extends unknown[] = []
 > =
   | ExistsCondition<ATTR_PATH>
   | TypeCondition<ATTR_PATH>
@@ -348,14 +367,15 @@ export type ListSchemaCondition<
   // Stops recursion on general case
   | (ListSchema extends SCHEMA
       ? never
-      : AttrCondition<`${ATTR_PATH}[${number}]`, SCHEMA['elements'], ALL_PATHS>)
+      : AttrCondition<`${ATTR_PATH}[${number}]`, SCHEMA['elements'], ALL_PATHS, never, DEPTH>)
   // "If the attribute is of type `List` or `Map`, `size` returns the number of child elements.""
   | SizeCondition<ATTR_PATH, ALL_PATHS>
 
 export type MapSchemaCondition<
   ATTR_PATH extends string,
   SCHEMA extends MapSchema,
-  ALL_PATHS extends string
+  ALL_PATHS extends string,
+  DEPTH extends unknown[] = []
 > =
   | ExistsCondition<ATTR_PATH>
   | TypeCondition<ATTR_PATH>
@@ -366,7 +386,9 @@ export type MapSchemaCondition<
           [KEY in keyof SCHEMA['attributes'] & string]: AttrCondition<
             AppendKey<ATTR_PATH, KEY>,
             SCHEMA['attributes'][KEY],
-            ALL_PATHS
+            ALL_PATHS,
+            never,
+            DEPTH
           >
         }[keyof SCHEMA['attributes'] & string])
   // "If the attribute is of type `List` or `Map`, `size` returns the number of child elements.""
@@ -375,7 +397,8 @@ export type MapSchemaCondition<
 export type RecordSchemaCondition<
   ATTR_PATH extends string,
   SCHEMA extends RecordSchema,
-  ALL_PATHS extends string
+  ALL_PATHS extends string,
+  DEPTH extends unknown[] = []
 > =
   | ExistsCondition<ATTR_PATH>
   | TypeCondition<ATTR_PATH>
@@ -385,7 +408,9 @@ export type RecordSchemaCondition<
       : AttrCondition<
           AppendKey<ATTR_PATH, ResolveStringSchema<SCHEMA['keys']>>,
           SCHEMA['elements'],
-          ALL_PATHS
+          ALL_PATHS,
+          never,
+          DEPTH
         >)
   // "If the attribute is of type `List` or `Map`, `size` returns the number of child elements.""
   | SizeCondition<ATTR_PATH, ALL_PATHS>
@@ -393,7 +418,8 @@ export type RecordSchemaCondition<
 export type AnyOfSchemaCondition<
   ATTR_PATH extends string,
   SCHEMA extends AnyOfSchema,
-  ALL_PATHS extends string
+  ALL_PATHS extends string,
+  DEPTH extends unknown[] = []
 > =
   | ExistsCondition<ATTR_PATH>
   | TypeCondition<ATTR_PATH>
@@ -402,7 +428,7 @@ export type AnyOfSchemaCondition<
       ? never
       : SCHEMA['elements'][number] extends infer ELEMENT
         ? ELEMENT extends Schema
-          ? AttrCondition<ATTR_PATH, ELEMENT, ALL_PATHS>
+          ? AttrCondition<ATTR_PATH, ELEMENT, ALL_PATHS, never, DEPTH>
           : never
         : never)
 

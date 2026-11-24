@@ -25,6 +25,8 @@ import type {
   SetSchema,
   ValidValue
 } from '~/schema/index.js'
+import type { LazySchema } from '~/schema/lazy/index.js'
+import type { ResolveLazySchema } from '~/schema/lazy/resolve.js'
 import type { Extends, If, Not, Optional, Overwrite } from '~/types/index.js'
 
 import type {
@@ -206,6 +208,11 @@ export type UpdateValueInput<
                 ]
               >
           >
+        | (SCHEMA extends LazySchema
+            ? Schema extends ReturnType<SCHEMA['resolve']>
+              ? unknown
+              : UpdateValueInput<ResolveLazySchema<SCHEMA>, OPTIONS, AVAILABLE_PATHS>
+            : never)
         | (SCHEMA extends AnySchema ? ResolveAnySchema<SCHEMA> | unknown : never)
         | (SCHEMA extends PrimitiveSchema ? ResolvePrimitiveSchema<SCHEMA> : never)
         | (SCHEMA extends NumberSchema

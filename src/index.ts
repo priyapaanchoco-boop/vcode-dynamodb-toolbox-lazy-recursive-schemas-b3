@@ -1,3 +1,4 @@
+export { lazy, LazySchema, LazySchema_ } from './schema/lazy/index.js'
 // schema
 export { SchemaAction, schema, s } from './schema/index.js'
 export type {

@@ -17,6 +17,8 @@ import type {
 } from '~/schema/index.js'
 import type { Extends, If, Not, Optional, Overwrite, SelectKeys } from '~/types/index.js'
 
+import type { LazySchema } from '../lazy/index.js'
+import type { ResolveLazySchema } from '../lazy/resolve.js'
 import type { SchemaExtendedWriteValue, WriteValueOptions } from './options.js'
 
 export type InputValue<
@@ -85,6 +87,11 @@ type SchemaInputValue<
 > = Schema extends SCHEMA
   ? unknown
   :
+      | (SCHEMA extends LazySchema
+          ? Schema extends ReturnType<SCHEMA['resolve']>
+            ? unknown
+            : InputValue<ResolveLazySchema<SCHEMA>, OPTIONS>
+          : never)
       | (SCHEMA extends AnySchema ? AnySchemaInputValue<SCHEMA, OPTIONS> : never)
       | (SCHEMA extends PrimitiveSchema ? PrimitiveSchemaInputValue<SCHEMA, OPTIONS> : never)
       | (SCHEMA extends SetSchema ? SetSchemaInputValue<SCHEMA, OPTIONS> : never)
